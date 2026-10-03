@@ -11,8 +11,11 @@ Measured per generation: load time, TTFT, prefill/decode tokens per sec, token-g
 percentiles (stutter), and process RAM (current + peak). On the phone (Termux with the
 Termux:API app) it also records battery %, battery temperature, charging state and CPU
 temperature; on the laptop those columns stay empty. One CSV row is appended per
-generation to results/benchmark.csv, so a crash never loses finished runs. Raw outputs go
-to results/raw/ (git-ignored).
+generation to results/raw/<run_id>_benchmark.csv, so a crash never loses finished runs. Each run
+writes its own set of files in results/raw/, all sharing the run_id prefix:
+    <run_id>_benchmark.csv   one row per generation
+    <run_id>_outputs.jsonl   the model's actual outputs and token timestamps
+    <run_id>_server.log      llama-server's log
 
 Every generation produces exactly --max-tokens tokens by default (end-of-text is ignored),
 so all prompts do the same amount of decode work. Use --no-fixed-output for natural lengths.
@@ -33,7 +36,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MB = 1024 * 1024
-CSV_PATH = ROOT / "results" / "benchmark.csv"  # new schema; the old benchmarks.csv is left untouched
 RAW_DIR = ROOT / "results" / "raw"
 CSV_FIELDS = [
     "timestamp", "run_id", "device", "model", "quant", "n_ctx", "threads", "rep",
@@ -298,16 +300,15 @@ def main():
     proc, load_s = start_server(args, run_id)
     print(f"Server ready in {load_s:.1f}s (build {build}). Warming up ...", flush=True)
 
-    CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    new_csv = not CSV_PATH.exists()
+    csv_path = RAW_DIR / f"{run_id}_benchmark.csv"
     raw_f = open(RAW_DIR / f"{run_id}_outputs.jsonl", "w", encoding="utf-8")
     rows = []
     try:
         generate(args, "Say hello in one short sentence.")  # warm-up, discarded
-        with CSV_PATH.open("a", newline="") as csv_f:
+        with csv_path.open("w", newline="") as csv_f:
             w = csv.DictWriter(csv_f, fieldnames=CSV_FIELDS)
-            if new_csv:
-                w.writeheader()
+            w.writeheader()
+            csv_f.flush()
             for rep in range(1, args.reps + 1):
                 for p in prompts:
                     batt0 = battery_status()  # sensor calls sit outside the timed window
@@ -366,7 +367,7 @@ def main():
         temps = [float(r["batt_temp_c"]) for r in rows if r["batt_temp_c"] != ""]
         print(f"  battery          {b0[0]:.0f}% -> {float(rows[-1]['batt_end_pct']):.0f}%"
               + (f", battery temp max {max(temps):.1f} C" if temps else ""))
-    print(f"\nRows appended to {CSV_PATH}")
+    print(f"\nResults written to {csv_path}")
 
 
 if __name__ == "__main__":
