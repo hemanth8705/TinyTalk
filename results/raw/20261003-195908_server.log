@@ -1,0 +1,5 @@
+0.00.000.989 I srv  llama_server: initializing ...
+warning: no usable GPU found, --gpu-layers option will be ignored
+warning: one possible reason is that llama.cpp was compiled without GPU support
+warning: consult docs/build.md for compilation instructions
+error: invalid argument: --no-mmap
