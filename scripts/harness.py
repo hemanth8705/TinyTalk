@@ -25,6 +25,7 @@ import csv
 import hashlib
 import json
 import re
+import shlex
 import shutil
 import statistics
 import subprocess
@@ -38,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MB = 1024 * 1024
 RAW_DIR = ROOT / "results" / "raw"
 CSV_FIELDS = [
-    "timestamp", "run_id", "device", "model", "quant", "n_ctx", "threads", "rep",
+    "timestamp", "run_id", "device", "run_type", "model", "quant", "n_ctx", "threads", "server_args", "rep",
     "prompt_id", "fixed_len", "n_prompt", "n_out", "load_s", "ttft_s", "prefill_tps", "decode_tps",
     "decode_tps_client", "itl_p50_ms", "itl_p95_ms", "itl_max_ms", "rss_mb", "peak_rss_mb",
     "batt_start_pct", "batt_end_pct", "batt_temp_c", "plugged", "cpu_temp_c",
@@ -174,7 +175,7 @@ def start_server(args, run_id):
     cmd = [
         str(args.server), "-m", str(args.model), "-c", str(args.ctx), "-t", str(args.threads),
         "-ngl", "0", "-np", "1", "--host", "127.0.0.1", "--port", str(args.port),
-    ]
+    ] + shlex.split(args.server_args)  # extra flags, e.g. --server-args="--no-mmap"
     t0 = time.perf_counter()
     proc = subprocess.Popen(cmd, stdout=log, stderr=log)
     url = f"http://127.0.0.1:{args.port}/health"
@@ -278,6 +279,11 @@ def main():
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--reps", type=int, default=3)
     ap.add_argument("--max-tokens", type=int, default=128)
+    ap.add_argument("--server-args", default="",
+                    help='extra llama-server flags, in quotes and with "=", e.g. --server-args="--no-mmap"')
+    ap.add_argument("--quality", action="store_true",
+                    help="quality run: prompts/quality_prompts.json, natural output lengths, 1 rep, "
+                         "max 256 tokens. Score the result with scripts/score_quality.py")
     ap.add_argument("--fixed-output", action=argparse.BooleanOptionalAction, default=True,
                     help="force exactly --max-tokens output tokens per prompt (default on)")
     ap.add_argument("--port", type=int, default=8080)
@@ -285,6 +291,12 @@ def main():
     ap.add_argument("--load-timeout", type=int, default=180)
     ap.add_argument("--request-timeout", type=int, default=300)
     args = ap.parse_args()
+    if args.quality:  # preset: natural lengths so answers can be judged, one pass over the quality set
+        args.prompts = ROOT / "prompts" / "quality_prompts.json"
+        args.fixed_output = False
+        args.reps = 1
+        if args.max_tokens == 128:
+            args.max_tokens = 256
 
     for p, what in ((args.model, "model"), (args.prompts, "prompts file")):
         if not p.exists():
@@ -293,7 +305,9 @@ def main():
 
     quant = args.quant or guess_quant(args.model)
     run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
-    print(f"Run {run_id}: {args.model.name} | {quant} | ctx {args.ctx} | {args.threads} threads | {args.device}")
+    run_type = "quality" if args.quality else "speed"
+    print(f"Run {run_id} ({run_type}): {args.model.name} | {quant} | ctx {args.ctx} | {args.threads} threads | "
+          f"{args.device}" + (f" | server args: {args.server_args}" if args.server_args else ""))
     print("Hashing model file (for reproducibility) ...", flush=True)
     sha, build = sha256_of(args.model), server_build(args.server)
 
@@ -317,8 +331,9 @@ def main():
                     rss, peak = process_memory_mb(proc.pid)
                     row = {
                         "timestamp": datetime.now().isoformat(timespec="seconds"), "run_id": run_id,
-                        "device": args.device, "model": args.model.name, "quant": quant,
-                        "n_ctx": args.ctx, "threads": args.threads, "rep": rep, "prompt_id": p["id"],
+                        "device": args.device, "run_type": run_type, "model": args.model.name, "quant": quant,
+                        "n_ctx": args.ctx, "threads": args.threads, "server_args": args.server_args,
+                        "rep": rep, "prompt_id": p["id"],
                         "fixed_len": args.fixed_output,
                         "n_prompt": g["n_prompt"], "n_out": g["n_out"], "load_s": fmt(load_s),
                         "ttft_s": fmt(g["ttft_s"], 3), "prefill_tps": fmt(g["prefill_tps"], 1),
