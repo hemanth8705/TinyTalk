@@ -1,0 +1,56 @@
+run_id,prompt_id,category,pass,tokens,output
+20261003-194731,fact_capital,factual,True,7,The capital of Australia is Canberra.
+20261003-194731,fact_gold,factual,True,1,Au
+20261003-194731,fact_author,factual,True,12,"Jane Austen wrote ""Pride and Prejudice."""
+20261003-194731,fact_planet,factual,True,3,Jupiter.
+20261003-194731,fact_moon,factual,True,5,1969.
+20261003-194731,fact_unknown,factual,True,87,"The fictional country of Zorblax does not exist in reality, and there is no widely recognized capital city for it. If you're referring to a specific fictional work or context (such as a book, movie, or game), the capital city would depend on that particular source. However, based on the information available, Zorblax is not a real country, and thus, there is no official capital city for it."
+20261003-194731,math_mult,math,True,53,"17 × 23 = 391  
+Explanation: 17 × 20 = 340, 17 × 3 = 51, so 340 + 51 = 391."
+20261003-194731,math_train,math,True,70,"The train travels 180 km at 60 km/h.  
+Time taken = $ \frac{180}{60} = 3 $ hours.  
+
+It leaves at 3:15 PM, so it arrives at **6:15 PM**.  
+
+**Answer: 6:15 PM**"
+20261003-194731,math_widgets,math,True,57,"It takes 5 minutes for 5 machines to make 5 widgets. So, each machine makes 1 widget in 5 minutes. 
+
+If 100 machines are making 100 widgets, they would take the same amount of time: **5 minutes**."
+20261003-194731,math_discount,math,False,8,The new price is $35.
+20261003-194731,math_sequence,math,True,25,"The sequence is a geometric progression with a common ratio of 3.  
+The next number is **162**."
+20261003-194731,math_sheep,math,True,17,"17 - 9 = 8. So, 8 sheep are left."
+20261003-194731,instr_bullets,instruction,True,19,"- Improves cardiovascular health  
+- Enhances mental well-being  
+- Increases muscle strength and flexibility"
+20261003-194731,instr_yesno,instruction,False,1,yes
+20261003-194731,instr_7words,instruction,False,20,The ocean covers nearly 70% of Earth's surface and is home to diverse marine life.
+20261003-194731,instr_caps,instruction,False,1,banana
+20261003-194731,instr_colors,instruction,True,5,"red,blue,green"
+20261003-194731,instr_french,instruction,True,3,Bonjour matin
+20261003-194731,json_movie,structured,True,27,"{""title"": ""Eclipse of the Mind"", ""year"": 2025, ""rating"": 8.7}"
+20261003-194731,json_primes,structured,True,16,"[2, 3, 5, 7, 11]"
+20261003-194731,json_ab,structured,True,26,"```json
+{
+  ""a"": 1,
+  ""b"": [1, 2, 3]
+}
+```"
+20261003-194731,code_even,code,True,43,"Sure! Here's a Python function named `is_even` that returns `True` if `n` is even:
+
+```python
+def is_even(n):
+    return n % 2 == 0
+```"
+20261003-194731,code_reverse,code,True,34,"The shortest way to reverse a string in Python is:
+
+```python
+s[::-1]
+```
+
+This uses slicing with a step of -1 to reverse the string."
+20261003-194731,code_sql,code,True,15,"```sql
+SELECT * FROM users WHERE age > 30;
+```"
+20261003-194731,read_fruit,reading,True,14,Maria bought 3 + 4 = 7 pieces of fruit.
+20261003-194731,read_meeting,reading,True,2,Thursday.

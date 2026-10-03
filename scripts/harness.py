@@ -175,13 +175,16 @@ def start_server(args, run_id):
     cmd = [
         str(args.server), "-m", str(args.model), "-c", str(args.ctx), "-t", str(args.threads),
         "-ngl", "0", "-np", "1", "--host", "127.0.0.1", "--port", str(args.port),
-    ] + shlex.split(args.server_args)  # extra flags, e.g. --server-args="--no-mmap"
+    ] + shlex.split(args.server_args)  # extra flags, e.g. --server-args="--load-mode none"
     t0 = time.perf_counter()
     proc = subprocess.Popen(cmd, stdout=log, stderr=log)
     url = f"http://127.0.0.1:{args.port}/health"
     while True:
         if proc.poll() is not None:
-            raise SystemExit(f"llama-server exited early (code {proc.returncode}); see {log.name}")
+            log.flush()
+            tail = [l for l in Path(log.name).read_text(errors="replace").splitlines() if l.strip()][-1:]
+            raise SystemExit(f"llama-server exited early (code {proc.returncode}): "
+                             f"{tail[0] if tail else 'no output'}\nfull log: {log.name}")
         if time.perf_counter() - t0 > args.load_timeout:
             proc.kill()
             raise SystemExit(f"llama-server not ready after {args.load_timeout}s; see {log.name}")
@@ -280,7 +283,8 @@ def main():
     ap.add_argument("--reps", type=int, default=3)
     ap.add_argument("--max-tokens", type=int, default=128)
     ap.add_argument("--server-args", default="",
-                    help='extra llama-server flags, in quotes and with "=", e.g. --server-args="--no-mmap"')
+                    help='extra llama-server flags, in quotes and with "=", e.g. --server-args="--load-mode none" '
+                         '(load modes: auto, none, mmap, mlock, mmap+mlock, dio)')
     ap.add_argument("--quality", action="store_true",
                     help="quality run: prompts/quality_prompts.json, natural output lengths, 1 rep, "
                          "max 256 tokens. Score the result with scripts/score_quality.py")
