@@ -226,4 +226,4 @@ __marimo__/
 tools/
 models/
 *.gguf
-results/raw/
+
