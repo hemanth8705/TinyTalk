@@ -221,3 +221,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# TinyTalk: large/local artifacts (CSV summaries in results/ are committed)
+tools/
+models/
+*.gguf
+results/raw/
